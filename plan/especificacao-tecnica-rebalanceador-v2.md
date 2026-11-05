@@ -1,4 +1,4 @@
-# Especificação Técnica e Visão Arquitetural: investment-rebalancer-ai
+# Especificação Técnica e Visão Arquitetural: investment-rebalancer-ai (v2)
 
 Documento de Visão Técnica e **Fonte da Verdade (Single Source of Truth)** do repositório `investment-rebalancer-ai`.
 
@@ -11,7 +11,7 @@ O **`investment-rebalancer-ai`** foi concebido para automatizar o processo de re
 
 ### 1.2 Abordagem Híbrida (Código Determinístico + Second Brain)
 Para garantir resiliência e precisão matemática, o sistema divide rigidamente a execução técnica em dois ecossistemas complementares:
-1. **Engine Determinística (FastAPI + Python + Otimizador Quadrático):** Responsável pela ingestão de APIs, scraping/parsing de carteiras recomendadas, busca de preços públicos de mercado e alocação exata de lotes discretos por otimização quadrática. Evita-se o uso de LLMs para cálculos matemáticos ou manipulação direta de planilhas.
+1. **Engine Determinística (FastAPI + Python + Otimizador Quadrático):** Responsável pela ingestão de APIs, parsing da carteira recomendada da plataforma de análise, parsing do extrato consolidado da B3, busca de preços públicos de mercado e alocação exata de lotes discretos por otimização quadrática. Evita-se o uso de LLMs para cálculos matemáticos ou manipulação direta de planilhas.
 2. **Second Brain Qualitativo (NotebookLM):** Atua como repositório central de inteligência financeira ("Second Brain"), armazenando relatórios mensais em PDF e históricos das teses emitidas pela casa de análise. Permite responder dúvidas qualitativas sobre trocas de ativos, teses de investimento e relatórios conjunturais sem interferir no cálculo exato de rebalanceamento.
 
 ---
@@ -20,25 +20,35 @@ Para garantir resiliência e precisão matemática, o sistema divide rigidamente
 
 ### 2.1 Stack do Sistema (Docker Compose)
 O projeto é empacotado através do **Docker Compose** em ambiente local, garantindo fácil reprodução e isolamento total de dependências:
-* **Backend:** Python 3.12 com FastAPI, Uvicorn, `httpx`, `gspread`, `numpy`, `scipy`, `yfinance` e Pydantic.
+* **Backend:** Python 3.12 com FastAPI, Uvicorn, `httpx`, `pandas`, `openpyxl`, `gspread`, `numpy`, `scipy`, `yfinance` e Pydantic.
 * **Frontend:** Node 20 com Next.js / React, Tailwind CSS e componentes interativos em TypeScript.
 * **Orquestração:** `docker-compose.yml` local expondo a aplicação em `http://localhost:3000`.
 
-### 2.2 Google Sheets como Banco de Dados e Fonte da Verdade
-Em vez de utilizar bancos de dados relacionais tradicionais, o **Google Sheets** é adotado como a *Single Source of Truth* do sistema.
+### 2.2 Google Sheets como Banco de Dados e Fonte da Verdade Histórica
+Em vez de utilizar bancos de dados relacionais tradicionais, o **Google Sheets** é adotado como a *Single Source of Truth* histórica do sistema.
 * **Service Account no GCP:** A autenticação backend é realizada via arquivo de credencial JSON (`credentials/google-service-account.json`) com permissão de escrita via biblioteca `gspread`.
 * **Fluxo de Abas Mensais:** Cada mês aprovado gera uma nova aba padronizada (ex.: `Maio_26`), preservando o histórico de aportes e atualizando a aba master de `Evolução Patrimonial`.
+
+### 2.3 Ingestão de Custódia Atual via Upload do Relatório Consolidado B3
+Para evitar digitação manual de saldos e cotas no dia do aporte, o sistema adiciona suporte nativo ao **relatório `.xlsx` exportado do portal da B3 (Área do Investidor)**:
+* **Módulo `b3_parser.py`:** Utiliza `pandas` (`pd.read_excel`) para ler as abas padronizadas do extrato consolidado mensal da B3:
+  * `Posição - Ações`: Extração de tickers (`BRBI11`, `GMAT3`, `PRIO3`, `VALE3`, `WIZC3`, etc.), quantidade de ações e valor atualizado.
+  * `Posição - ETF`: Extração de ETFs (`GOLD11`, `HTEK11`, `IRFM11`, `USDB11`, `WRLD11`), cotas e valores.
+  * `Posição - Fundos`: Extração de FIIs e Fundos (`CPTI11`, `CPTS11`, `JURO11`, `KDIF11`, `PVBI11`, `XPML11`, etc.), quantidade e valor atualizado.
+  * `Posição - Renda Fixa`: Extração de CDBs pós-fixados (Daycoval, Inter) com quantidade, emissor e valor atualizado pela curva (MTM).
+  * `Posição - Tesouro Direto`: Extração de títulos públicos (`Tesouro IPCA+ 2050`, `Tesouro Selic`), quantidade de títulos e valor bruto/líquido.
+* **Vantagem:** Custo zero, zero burocracia com APIs pagas e 100% de precisão de dados oficiais direto da B3.
 
 ---
 
 ## 3. Ingestão da Carteira Recomendada e Autenticação (Pass-Through Auth)
 
 ### 3.1 Pass-Through Authentication (Autenticação Transparente)
-Para evitar o armazenamento de senhas e credenciais de acesso em arquivos de configuração local (`.env`), o sistema implementa a arquitetura de **Autenticação por Repasse**:
-1. O usuário informa seu e-mail e senha diretamente na tela de login da interface web.
-2. O endpoint `POST /api/v1/auth/login` do FastAPI repassa as credenciais via chamada HTTP (`httpx`) para o endpoint oficial de autenticação da casa de análise.
-3. O FastAPI captura o Bearer Token retornado no corpo da resposta (*Response Body*) e o armazena de forma efêmera em sessão (`sessionStorage` do navegador / memória RAM do servidor).
-4. As senhas são descartadas imediatamente após a validação, eliminando riscos de vazamento.
+Para evitar a persistência local de credenciais em arquivos de configuração (`.env`), o sistema implementa a arquitetura de **Autenticação por Repasse**:
+1. O usuário informa suas credenciais na tela de login da interface web.
+2. O endpoint `POST /api/v1/auth/login` do FastAPI realiza a requisição HTTP (`httpx`) para o servidor de autenticação da plataforma de análise.
+3. O FastAPI captura o Bearer Token retornado no corpo da resposta e o armazena de forma efêmera em sessão (`sessionStorage` do navegador / memória RAM do servidor).
+4. O acesso é mantido durante a sessão efêmera sem gravar credenciais em disco.
 
 ### 3.2 Parsing da Carteira Recomendada ("Ativos 50K")
 O módulo `parser.py` navega pela estrutura de árvore hierárquica do payload JSON fornecido pela casa de análise (faixa **"Ativos 50K"** composta por 32 ativos principais), transformando nós aninhados em uma lista plana e tipada pelo Pydantic (`RecommendedAsset`). A carteira distribui 100% do patrimônio entre 4 categorias principais:
@@ -68,8 +78,8 @@ O parser e o pipeline de dados tratam nativamente 5 inconsistências comuns em p
 5. **Full Outer Join entre Custódia Real e Carteira Recomendada:**
    * *Problema:* Ativos em custódia que saíram da recomendação ou ativos recomendados que o usuário ainda não possui.
    * *Solução:* O backend realiza a junção completa dos dados:
-     * *Ativo na planilha, mas fora da API:* Peso alvo vira `0%` e o ativo é sinalizado para liquidação total.
-     * *Ativo na API, mas fora da planilha:* Entra na simulação com saldo atual de `R$ 0,00` e desvio de `100%` do alvo.
+     * *Ativo na planilha/extrato B3, mas fora da API:* Peso alvo vira `0%` e o ativo é sinalizado para liquidação total.
+     * *Ativo na API, mas fora da planilha/extrato B3:* Entra na simulação com saldo atual de `R$ 0,00` e desvio de `100%` do alvo.
 
 ---
 
@@ -83,7 +93,7 @@ O módulo `market_data.py` consolida os preços atualizados através de fontes p
 * **Criptomoedas (Bitcoin):** Consulta de cotação em BRL via API pública do CoinGecko / Binance.
 
 ### 5.2 Entradas Manuais Restritas
-Manutenção de input manual na UI restrita estritamente a ativos sem cotação pública diária, como títulos de Renda Fixa privada (CDBs pós-fixados).
+Manutenção de input manual na UI restrita estritamente a ativos sem cotação pública diária ou ativos mantidos fora da B3 (como saldo em cripto ou contas correntes livres).
 
 ---
 
@@ -92,12 +102,12 @@ Manutenção de input manual na UI restrita estritamente a ativos sem cotação 
 ### 6.1 Formulação Matemática
 O problema de alocação de aportes é modelado como um problema de **Programação Inteira Quadrática Discreta (MIQP / Coordinate Descent)**. O objetivo é minimizar a soma dos desvios quadráticos entre o valor final de cada ativo pós-aporte e o seu valor ideal recomendado, respeitando a trava de orçamento disponível ($X$):
 
-$$\min \sum_{i=1}^{N} \left( (\text{Atual}_i + q_i \times P_i) - \text{Recomendado}_i \right)^2$$
+Sum_i ((Atual_i + q_i * P_i) - Recomendado_i)^2
 
 **Sujeito a:**
-* $\sum_{i=1}^{N} (q_i \times P_i) \le X \quad \text{(Restrição de Orçamento)}$
-* $q_i \in \mathbb{Z} \quad \text{(Lotes Inteiros para Ações, FIIs e ETFs)}$
-* $q_i \times P_i \ge M_i \quad \text{ou} \quad q_i = 0 \quad \text{(Trava de Aporte Mínimo / Minimum Lot)}$
+* Sum_i (q_i * P_i) <= X (Restrição de Orçamento)
+* q_i em inteiros (Lotes Inteiros para Ações, FIIs e ETFs)
+* q_i * P_i >= M_i ou q_i = 0 (Trava de Aporte Mínimo / Minimum Lot)
 
 O uso da função quadrática penaliza desproporcionalmente grandes desvios absolutos, impedindo que aportes pequenos sejam consumidos por um único ativo com aporte mínimo elevado (ex.: CDB de R$ 1.000 ou Fundo de R$ 500).
 
@@ -138,6 +148,7 @@ investment-rebalancer-ai/
 │       │   ├── market_data.py
 │       │   └── sheets_db.py
 │       ├── services/
+│       │   ├── b3_parser.py
 │       │   ├── parser.py
 │       │   └── optimizer.py
 │       └── schemas.py
@@ -146,6 +157,7 @@ investment-rebalancer-ai/
     └── src/
         ├── components/
         │   ├── LoginForm.tsx
+        │   ├── B3Upload.tsx
         │   ├── Dashboard.tsx
         │   └── SimulationTable.tsx
         └── pages/
@@ -153,8 +165,9 @@ investment-rebalancer-ai/
 ```
 
 ### 7.2 Fluxo Operacional da Interface no Dia do Aporte
-1. **Login:** O usuário acessa a UI local (`http://localhost:3000`) e efetua login com as credenciais da plataforma para obter o Bearer Token.
-2. **Sincronização:** O sistema executa o *Full Outer Join* entre a última aba do Google Sheets, a API de Recomendações e as cotações de mercado da B3/CVM/Cripto.
-3. **Parametrização:** O usuário insere o valor do novo aporte ($X$), atualiza saldos de ativos sem cotação pública (CDBs) e seleciona o modo de giro ("Sabonete" ou "Cirúrgico").
-4. **Simulação:** O otimizador executa em < 10ms e renderiza a tabela interativa mostrando a quantidade a comprar/vender, o valor alocado por ativo e alertas de preços teto/revisão.
-5. **Commit:** O usuário clica em **"Confirmar e Salvar no Google Sheets"**, disparando a escrita da nova aba mensal padronizada e a atualização do saldo consolidado.
+1. **Login:** O usuário acessa a UI local (`http://localhost:3000`) e efetua autenticação para obter o Bearer Token.
+2. **Ingestão de Custódia:** O usuário envia o relatório `.xlsx` exportado da B3 via drag-and-drop no componente `B3Upload.tsx`.
+3. **Sincronização:** O backend executa o *Full Outer Join* entre o arquivo da B3, a carteira recomendada e as cotações de mercado em tempo real.
+4. **Parametrização:** O usuário insere o valor do novo aporte ($X$), ajusta saldos manuais (se houver ativos fora da B3) e seleciona o modo de giro ("Sabonete" ou "Cirúrgico").
+5. **Simulação:** O otimizador executa em < 10ms e renderiza a tabela interativa mostrando a quantidade a comprar/vender, o valor alocado por ativo e alertas de preços teto/revisão.
+6. **Commit:** O usuário clica em **"Confirmar e Salvar no Google Sheets"**, disparando a escrita da nova aba mensal padronizada e a atualização do saldo consolidado.

@@ -1,5 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Response, status
 from fastapi.middleware.cors import CORSMiddleware
+from app.clients.sheets_db import SheetsDbClient
 
 app = FastAPI(
     title="Investment Rebalancer AI API",
@@ -25,3 +26,12 @@ def read_root():
 def health_check():
     return {"status": "healthy"}
 
+
+@app.get("/api/v1/sheets/health")
+def sheets_health(response: Response):
+    """Check connectivity and credentials health for Google Sheets integration."""
+    client = SheetsDbClient()
+    result = client.test_connection()
+    if not result.get("connected", False):
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    return result
