@@ -1,0 +1,13 @@
+{
+  "FIXA11": {
+    "type": "ETF",
+    "fractional": true,
+    "min_order_value": 0.0
+  },
+  "TESOURO SELIC": {
+    "type": "TESOURO",
+    "fractional": true,
+    "min_order_value": 30.0
+  }
+}
+
