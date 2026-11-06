@@ -1,7 +1,16 @@
 from fastapi import FastAPI, HTTPException, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from app.clients.sheets_db import SheetsDbClient
-from app.schemas import InitTemplateResponse, LatestCustodyResponse
+from app.schemas import (
+    AliasAddRequest,
+    AssetMappingListResponse,
+    AssetRule,
+    InitTemplateResponse,
+    LatestCustodyResponse,
+    ResolveBatchResponse,
+    ResolveRequest,
+)
+from app.services.asset_resolver import AssetResolver, load_seed_rules
 
 app = FastAPI(
     title="Investment Rebalancer AI API",
@@ -75,4 +84,83 @@ def init_sheets_template():
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao inicializar templates: {str(e)}",
+        )
+
+
+@app.get("/api/v1/assets/mapping", response_model=AssetMappingListResponse)
+def list_asset_mapping(refresh: bool = False):
+    """List all mapped assets and trading constraints from 'Mapeamento_Ativos' (or fallback JSON)."""
+    resolver = AssetResolver()
+    source, rules = resolver.get_rules(force_refresh=refresh)
+    return AssetMappingListResponse(
+        source=source,
+        count=len(rules),
+        items=rules,
+    )
+
+
+@app.put("/api/v1/assets/mapping", response_model=AssetRule)
+def upsert_asset_mapping(rule: AssetRule):
+    """Create or update an asset rule (including minimum order, lot step, aliases) in Google Sheets."""
+    client = SheetsDbClient()
+    if not client.is_credentials_present():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Arquivo de credencial Google Sheets não configurado.",
+        )
+    try:
+        resolver = AssetResolver(sheets_client=client)
+        return resolver.upsert_rule(rule)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao salvar regra do ativo: {str(e)}",
+        )
+
+
+@app.post("/api/v1/assets/alias", response_model=AssetRule)
+def add_asset_alias(req: AliasAddRequest):
+    """Add a new alias/synonym to an existing asset in 'Mapeamento_Ativos'."""
+    client = SheetsDbClient()
+    if not client.is_credentials_present():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Arquivo de credencial Google Sheets não configurado.",
+        )
+    try:
+        resolver = AssetResolver(sheets_client=client)
+        return resolver.add_alias(req.ticker, req.alias)
+    except ValueError as ve:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao vincular alias: {str(e)}",
+        )
+
+
+@app.post("/api/v1/assets/resolve", response_model=ResolveBatchResponse)
+def resolve_assets_batch(req: ResolveRequest):
+    """Resolve a list of asset names/tickers and check if simulation is unblocked."""
+    resolver = AssetResolver()
+    return resolver.resolve_batch(req.names)
+
+
+@app.post("/api/v1/assets/seed")
+def seed_assets_mapping():
+    """Populate 'Mapeamento_Ativos' tab in Google Sheets with the initial seed catalog."""
+    client = SheetsDbClient()
+    if not client.is_credentials_present():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Arquivo de credencial Google Sheets não configurado.",
+        )
+    try:
+        seed_rules = load_seed_rules()
+        res = client.seed_asset_mapping_sheet(seed_rules)
+        return res
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao popular aba Mapeamento_Ativos: {str(e)}",
         )

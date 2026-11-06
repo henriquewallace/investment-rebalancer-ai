@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { SimulationTable, SimulationRow } from "./SimulationTable";
+import { AssetMappingModal } from "./AssetMappingModal";
 
 interface DashboardProps {
   onLogout: () => void;
@@ -28,7 +29,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [rows, setRows] = useState<SimulationRow[]>([]);
   const [isSimulating, setIsSimulating] = useState(false);
 
-  // Sheets state
+  // Sheets & Mapping state
   const [sheetsHealth, setSheetsHealth] = useState<SheetsHealth | null>(null);
   const [isCheckingSheets, setIsCheckingSheets] = useState(false);
   const [custodyData, setCustodyData] = useState<{
@@ -38,6 +39,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   } | null>(null);
   const [isLoadingCustody, setIsLoadingCustody] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  const [isMappingModalOpen, setIsMappingModalOpen] = useState(false);
+  const [unmappedAssets, setUnmappedAssets] = useState<string[]>([]);
+  const [mappedCatalogCount, setMappedCatalogCount] = useState<number>(0);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -58,6 +63,38 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     }
   };
 
+  const fetchCatalogCount = async () => {
+    try {
+      const res = await fetch(`${apiUrl}/api/v1/assets/mapping`);
+      if (res.ok) {
+        const data = await res.json();
+        setMappedCatalogCount(data.count || 0);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  const checkResolutionForNames = async (names: string[]) => {
+    if (!names.length) {
+      setUnmappedAssets([]);
+      return;
+    }
+    try {
+      const res = await fetch(`${apiUrl}/api/v1/assets/resolve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ names }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUnmappedAssets(data.unmapped || []);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
   const handleInitTemplate = async () => {
     setFeedbackMsg(null);
     try {
@@ -66,6 +103,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       if (!res.ok) throw new Error(data.detail || "Erro ao inicializar templates");
       setFeedbackMsg({ type: "success", text: data.message || "Templates inicializados com sucesso!" });
       checkSheetsHealth();
+      fetchCatalogCount();
     } catch (err: any) {
       setFeedbackMsg({ type: "error", text: err.message });
     }
@@ -79,6 +117,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || "Erro ao carregar custódia");
       setCustodyData(data);
+      const tickers = (data.assets || []).map((a: CustodyItem) => a.ticker);
+      await checkResolutionForNames(tickers);
       setFeedbackMsg({
         type: "success",
         text: `Custódia carregada da aba '${data.tab_name}': ${data.assets.length} ativos (Total R$ ${data.total_value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })})`,
@@ -92,9 +132,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
   useEffect(() => {
     checkSheetsHealth();
+    fetchCatalogCount();
   }, []);
 
+  const handleMappingUpdated = async () => {
+    await fetchCatalogCount();
+    if (custodyData?.assets) {
+      const tickers = custodyData.assets.map((a) => a.ticker);
+      await checkResolutionForNames(tickers);
+    }
+  };
+
   const handleSimulate = async () => {
+    if (unmappedAssets.length > 0) return;
     setIsSimulating(true);
     try {
       setRows([]);
@@ -152,11 +202,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               Testar Conexão
             </button>
             <button
+              onClick={() => setIsMappingModalOpen(true)}
+              className="px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-900 text-white rounded-lg transition flex items-center gap-1.5"
+            >
+              <span>Mapeamento e Regras ({mappedCatalogCount})</span>
+              {unmappedAssets.length > 0 && (
+                <span className="px-1.5 py-0.2 bg-amber-400 text-slate-950 font-bold rounded-full text-[10px]">
+                  {unmappedAssets.length} pendente(s)
+                </span>
+              )}
+            </button>
+            <button
               onClick={handleInitTemplate}
               disabled={!sheetsHealth?.connected}
               className="px-3 py-1.5 text-xs font-medium bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg transition disabled:opacity-50"
             >
-              Inicializar Templates (_TEMPLATE & Evolução)
+              Inicializar Templates
             </button>
             <button
               onClick={handleLoadLatestCustody}
@@ -177,6 +238,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             }`}
           >
             {feedbackMsg.text}
+          </div>
+        )}
+
+        {unmappedAssets.length > 0 && (
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+            <div className="text-xs text-amber-800">
+              <strong>Atenção:</strong> Existem <strong>{unmappedAssets.length}</strong> ativo(s) sem mapeamento ({unmappedAssets.join(", ")}). A simulação está bloqueada até que sejam mapeados.
+            </div>
+            <button
+              onClick={() => setIsMappingModalOpen(true)}
+              className="px-3 py-1.5 text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white rounded-lg whitespace-nowrap"
+            >
+              Resolver Mapeamento
+            </button>
           </div>
         )}
 
@@ -262,10 +337,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         <div className="flex items-end">
           <button
             onClick={handleSimulate}
-            disabled={isSimulating}
+            disabled={isSimulating || unmappedAssets.length > 0}
             className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-medium rounded-lg transition"
           >
-            {isSimulating ? "Calculando..." : "Simular Rebalanceamento"}
+            {unmappedAssets.length > 0
+              ? `Bloqueado (${unmappedAssets.length} não mapeado)`
+              : isSimulating
+              ? "Calculando..."
+              : "Simular Rebalanceamento"}
           </button>
         </div>
       </div>
@@ -284,6 +363,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
         <SimulationTable rows={rows} />
       </section>
+
+      <AssetMappingModal
+        isOpen={isMappingModalOpen}
+        onClose={() => setIsMappingModalOpen(false)}
+        unmappedAssets={unmappedAssets}
+        onMappingUpdated={handleMappingUpdated}
+      />
     </div>
   );
 };

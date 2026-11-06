@@ -216,6 +216,88 @@
         "width": 160
       }
     ]
+  },
+  "mapping_template": {
+    "tab_name": "Mapeamento_Ativos",
+    "freeze_rows": 1,
+    "header_color": {
+      "red": 0.09,
+      "green": 0.25,
+      "blue": 0.22
+    },
+    "columns": [
+      {
+        "letter": "A",
+        "key": "ticker",
+        "header": "Ticker",
+        "type": "string",
+        "width": 140
+      },
+      {
+        "letter": "B",
+        "key": "name",
+        "header": "Nome",
+        "type": "string",
+        "width": 240
+      },
+      {
+        "letter": "C",
+        "key": "category",
+        "header": "Categoria",
+        "type": "string",
+        "width": 130
+      },
+      {
+        "letter": "D",
+        "key": "asset_type",
+        "header": "Tipo",
+        "type": "string",
+        "width": 100
+      },
+      {
+        "letter": "E",
+        "key": "is_fractional",
+        "header": "Fracionável",
+        "type": "boolean",
+        "width": 100
+      },
+      {
+        "letter": "F",
+        "key": "min_order_value",
+        "header": "Aporte Mínimo (R$)",
+        "type": "currency",
+        "format": "R$ #,##0.00",
+        "width": 150
+      },
+      {
+        "letter": "G",
+        "key": "lot_step",
+        "header": "Passo Lote",
+        "type": "number",
+        "format": "#,##0.0000",
+        "width": 110
+      },
+      {
+        "letter": "H",
+        "key": "price_source",
+        "header": "Fonte Preço",
+        "type": "string",
+        "width": 120
+      },
+      {
+        "letter": "I",
+        "key": "aliases",
+        "header": "Aliases",
+        "type": "string",
+        "width": 320
+      },
+      {
+        "letter": "J",
+        "key": "active",
+        "header": "Ativo",
+        "type": "boolean",
+        "width": 80
+      }
+    ]
   }
 }
-

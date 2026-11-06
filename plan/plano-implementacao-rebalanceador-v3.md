@@ -44,21 +44,25 @@ Este documento orienta o desenvolvimento passo a passo do **`investment-rebalanc
   - **Padrão de Nomenclatura:** Regex `^(Jan|Fev|Mar|Abr|Mai|Jun|Jul|Ago|Set|Out|Nov|Dez)_(\d{2})$` para ordenação cronológica e seleção automática da custódia mais recente.
 * **Critérios de Aceite:**
   - [x] Arquivo de template e schema `config/sheets_template.json` versionado no projeto.
-  - [ ] Implementação de `ensure_template_sheet()` para inicializar `_TEMPLATE` e `Evolução Patrimonial` no Google Sheets se inexistentes.
-  - [ ] Implementação de `get_latest_monthly_sheet()` ordenando abas cronologicamente e retornando lista tipada de `CustodyAsset`.
-  - [ ] Implementação de `create_monthly_sheet()` duplicando `_TEMPLATE`, preenchendo os 13 campos formatados e linha de totais.
-  - [ ] Implementação de `append_evolution_record()` inserindo ou atualizando a linha do mês na aba `Evolução Patrimonial`.
-  - [ ] Endpoint `GET /api/v1/sheets/latest-custody` retornando a custódia do último mês registrado.
-  - [ ] Endpoint `POST /api/v1/sheets/template/init` para bootstrapping da planilha.
-  - [ ] Testes unitários com mocks cobrindo ordenação de abas, leitura, escrita e tratamento de erros.
+  - [x] Implementação de `ensure_template_sheet()` para inicializar `_TEMPLATE` e `Evolução Patrimonial` no Google Sheets se inexistentes.
+  - [x] Implementação de `get_latest_monthly_sheet()` ordenando abas cronologicamente e retornando lista tipada de `CustodyAsset`.
+  - [x] Implementação de `create_monthly_sheet()` duplicando `_TEMPLATE`, preenchendo os 13 campos formatados e linha de totais.
+  - [x] Implementação de `append_evolution_record()` inserindo ou atualizando a linha do mês na aba `Evolução Patrimonial`.
+  - [x] Endpoint `GET /api/v1/sheets/latest-custody` retornando a custódia do último mês registrado.
+  - [x] Endpoint `POST /api/v1/sheets/template/init` para bootstrapping da planilha.
+  - [x] Testes unitários com mocks cobrindo ordenação de abas, leitura, escrita e tratamento de erros.
 * **Entregável:** Template padronizado versionado no projeto, módulo `sheets_db.py` com leitura/escrita funcional e testes passando.
 
-### Tarefa 2.3: Configuração de Mapeamento de Ativos (`asset_mapping.json` / `alias_map.json`)
-* **Descrição:** Criar arquivos JSON de configuração para vincular nomes/tickers da recomendação aos ativos mantidos em custódia (ex.: relacionar opções "OU" e fundos espelho às escolhas reais), além de registrar regras de aplicação e lote mínimo (como CDB Daycoval R$ 1.000 e Genoa R$ 500).
+### Tarefa 2.3: Mapeamento de Ativos no Google Sheets (`Mapeamento_Ativos`) e Regras Operacionais
+* **Descrição:** Centralizar o catálogo de ativos, regras operacionais de negociação (lote inteiro vs fracionário, aportes mínimos como CDB Daycoval R$ 1.000 e Fundos R$ 500) e de-para de sinonímias/opções "OU" na aba `Mapeamento_Ativos` do Google Sheets, com arquivos `config/asset_mapping.json` e `config/alias_map.json` atuando como seed inicial e fallback offline. Incluir modal na UI para edição de regras, vínculo de aliases e bloqueio de simulação enquanto existirem ativos não mapeados.
 * **Critérios de Aceite:**
-  - Mapeamento de sinonímias e regras de de-para para ativos equivalentes.
-  - Mapeamento de regras de lote mínimo e restrições de fracionamento.
-* **Entregável:** Arquivos de mapeamento criados e integrados ao backend.
+  - [x] Aba `Mapeamento_Ativos` (10 colunas) definida em `config/sheets_template.json` e populada no Google Sheets com os 33 ativos da carteira.
+  - [x] Mapeamento de sinonímias e expressões "OU" (`ETF IRFM11 OU ETF IDKA11` -> `IRFM11`, `CDB DO DAYCOVAL, CDB DO BMG OU TESOURO RESERVA` -> `CDB DAYCOVAL`).
+  - [x] Mapeamento de travas de lote mínimo ($M_i$) e fracionamento editáveis via Google Sheets e interface web.
+  - [x] Serviço `AssetResolver` (`backend/app/services/asset_resolver.py`) e endpoints `/api/v1/assets/*` operacionais.
+  - [x] Modal `AssetMappingModal.tsx` no frontend permitindo editar regras, cadastrar novos ativos, vincular aliases e bloquear simulação quando houver ativo não mapeado.
+  - [x] Testes automatizados cobrindo resolução, aliases, CRUD na planilha e bloqueio de não mapeados.
+* **Entregável:** Aba `Mapeamento_Ativos` populada na planilha, serviço `asset_resolver.py`, modal de gerenciamento na UI e testes passando.
 
 ### Tarefa 2.4: Parser do Relatório Consolidado B3 (`b3_parser.py`)
 * **Descrição:** Implementar o parser para ler o arquivo `.xlsx` do relatório mensal da B3 (Área do Investidor) contendo as abas de Posição (`Ações`, `ETF`, `Fundos`, `Renda Fixa`, `Tesouro Direto`). Extrair automaticamente quantidades de cotas, tickers e saldos de CDBs/Tesouro/Bolsa.

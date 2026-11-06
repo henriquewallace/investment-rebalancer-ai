@@ -123,7 +123,8 @@ def test_ensure_template_sheet(tmp_path):
 
     mock_template_ws = MagicMock()
     mock_evo_ws = MagicMock()
-    mock_sh.add_worksheet.side_effect = [mock_template_ws, mock_evo_ws]
+    mock_map_ws = MagicMock()
+    mock_sh.add_worksheet.side_effect = [mock_template_ws, mock_evo_ws, mock_map_ws]
 
     client._spreadsheet = mock_sh
     client._client = MagicMock()
@@ -132,7 +133,8 @@ def test_ensure_template_sheet(tmp_path):
     assert res["initialized"] is True
     assert "_TEMPLATE" in res["created_tabs"]
     assert "Evolução Patrimonial" in res["created_tabs"]
-    assert mock_sh.add_worksheet.call_count == 2
+    assert "Mapeamento_Ativos" in res["created_tabs"]
+    assert mock_sh.add_worksheet.call_count == 3
 
 
 def test_get_latest_monthly_sheet(tmp_path):

@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import gspread
 from google.oauth2.service_account import Credentials
 
-from app.schemas import CustodyAsset, EvolutionRecord, RebalanceItem
+from app.schemas import AssetRule, CustodyAsset, EvolutionRecord, RebalanceItem
 
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
@@ -120,6 +120,21 @@ def load_template_config(custom_path: Optional[str] = None) -> Dict[str, Any]:
                 {"letter": "K", "header": "Saldo Alternativos (R$)", "key": "alternatives_total"},
             ],
         },
+        "mapping_template": {
+            "tab_name": "Mapeamento_Ativos",
+            "columns": [
+                {"letter": "A", "header": "Ticker", "key": "ticker"},
+                {"letter": "B", "header": "Nome", "key": "name"},
+                {"letter": "C", "header": "Categoria", "key": "category"},
+                {"letter": "D", "header": "Tipo", "key": "asset_type"},
+                {"letter": "E", "header": "Fracionável", "key": "is_fractional"},
+                {"letter": "F", "header": "Aporte Mínimo (R$)", "key": "min_order_value"},
+                {"letter": "G", "header": "Passo Lote", "key": "lot_step"},
+                {"letter": "H", "header": "Fonte Preço", "key": "price_source"},
+                {"letter": "I", "header": "Aliases", "key": "aliases"},
+                {"letter": "J", "header": "Ativo", "key": "active"},
+            ],
+        },
     }
 
 
@@ -159,11 +174,19 @@ class SheetsDbClient:
         spreadsheet_id: Optional[str] = None,
         template_config_path: Optional[str] = None,
     ):
-        self.credentials_path = credentials_path or os.getenv(
-            "GOOGLE_APPLICATION_CREDENTIALS",
-            "/app/credentials/google-service-account.json",
+        self.credentials_path = (
+            credentials_path
+            if credentials_path is not None
+            else os.getenv(
+                "GOOGLE_APPLICATION_CREDENTIALS",
+                "/app/credentials/google-service-account.json",
+            )
         )
-        self.spreadsheet_id = spreadsheet_id or os.getenv("SPREADSHEET_ID", "")
+        self.spreadsheet_id = (
+            spreadsheet_id
+            if spreadsheet_id is not None
+            else os.getenv("SPREADSHEET_ID", "")
+        )
         self.template_config = load_template_config(template_config_path)
         self._client: Optional[gspread.Client] = None
         self._spreadsheet: Optional[gspread.Spreadsheet] = None
@@ -282,6 +305,23 @@ class SheetsDbClient:
             except Exception:
                 pass
             created_tabs.append(evo_name)
+
+        # 3. Mapeamento_Ativos
+        map_name = self.template_config.get("mapping_template", {}).get(
+            "tab_name", "Mapeamento_Ativos"
+        )
+        if map_name not in existing_worksheets:
+            cols = self.template_config.get("mapping_template", {}).get("columns", [])
+            headers = [c.get("header", "") for c in cols]
+            ws_map = sh.add_worksheet(
+                title=map_name, rows=100, cols=max(len(headers), 12)
+            )
+            ws_map.update(range_name="A1:J1", values=[headers])
+            try:
+                ws_map.freeze(rows=1)
+            except Exception:
+                pass
+            created_tabs.append(map_name)
 
         return {
             "initialized": True,
@@ -572,3 +612,159 @@ class SheetsDbClient:
             ws_evo.append_row(row_data)
 
         return True
+
+    def _get_mapping_worksheet(self) -> gspread.Worksheet:
+        """Return 'Mapeamento_Ativos' worksheet, creating it if missing."""
+        sh = self.get_spreadsheet()
+        map_name = self.template_config.get("mapping_template", {}).get(
+            "tab_name", "Mapeamento_Ativos"
+        )
+        ws = next((w for w in sh.worksheets() if w.title == map_name), None)
+        if ws is None:
+            self.ensure_template_sheet()
+            sh = self.get_spreadsheet()
+            ws = next((w for w in sh.worksheets() if w.title == map_name))
+        return ws
+
+    @staticmethod
+    def _rule_to_row(rule: AssetRule) -> List[Any]:
+        aliases_str = "|".join(dict.fromkeys(a.strip() for a in rule.aliases if a.strip()))
+        return [
+            rule.ticker.strip().upper(),
+            rule.name.strip(),
+            rule.category.strip(),
+            rule.asset_type.strip().upper(),
+            "TRUE" if rule.is_fractional else "FALSE",
+            round(float(rule.min_order_value), 2),
+            round(float(rule.lot_step), 4),
+            rule.price_source.strip(),
+            aliases_str,
+            "TRUE" if rule.active else "FALSE",
+        ]
+
+    @staticmethod
+    def _row_to_rule(row: List[str]) -> Optional[AssetRule]:
+        if not row or not row[0].strip():
+            return None
+        ticker = row[0].strip().upper()
+        if ticker in ["TICKER", "TOTAL"]:
+            return None
+        name = row[1].strip() if len(row) > 1 and row[1].strip() else ticker
+        category = row[2].strip() if len(row) > 2 and row[2].strip() else "Outros"
+        asset_type = row[3].strip().upper() if len(row) > 3 and row[3].strip() else "STOCK"
+        is_frac_str = row[4].strip().upper() if len(row) > 4 else "FALSE"
+        is_fractional = is_frac_str in ["TRUE", "1", "SIM", "YES", "VERDADEIRO"]
+        min_order = parse_numeric(row[5]) if len(row) > 5 else 0.0
+        lot_step = parse_numeric(row[6]) if len(row) > 6 and parse_numeric(row[6]) > 0 else 1.0
+        price_src = row[7].strip() if len(row) > 7 and row[7].strip() else "brapi"
+        raw_aliases = row[8].strip() if len(row) > 8 else ""
+        aliases = [a.strip() for a in raw_aliases.split("|") if a.strip()]
+        active_str = row[9].strip().upper() if len(row) > 9 and row[9].strip() else "TRUE"
+        active = active_str not in ["FALSE", "0", "NAO", "NÃO", "NO", "FALSO"]
+
+        return AssetRule(
+            ticker=ticker,
+            name=name,
+            category=category,
+            asset_type=asset_type,
+            is_fractional=is_fractional,
+            min_order_value=min_order,
+            lot_step=lot_step,
+            price_source=price_src,
+            aliases=aliases,
+            active=active,
+        )
+
+    def get_asset_mapping_rows(self) -> List[AssetRule]:
+        """Read all AssetRule entries from the 'Mapeamento_Ativos' tab."""
+        ws = self._get_mapping_worksheet()
+        all_values = ws.get_all_values()
+        if not all_values or len(all_values) <= 1:
+            return []
+
+        rules: List[AssetRule] = []
+        for row in all_values[1:]:
+            rule = self._row_to_rule(row)
+            if rule is not None:
+                rules.append(rule)
+        return rules
+
+    def seed_asset_mapping_sheet(self, seed_rules: List[AssetRule]) -> Dict[str, Any]:
+        """Populate 'Mapeamento_Ativos' with seed rules without overwriting existing tickers."""
+        ws = self._get_mapping_worksheet()
+        all_values = ws.get_all_values()
+
+        cols = self.template_config.get("mapping_template", {}).get("columns", [])
+        headers = [c.get("header", "") for c in cols]
+        if not all_values:
+            ws.update(range_name="A1:J1", values=[headers])
+            all_values = [headers]
+
+        existing_tickers = set()
+        for row in all_values[1:]:
+            if row and row[0].strip():
+                existing_tickers.add(row[0].strip().upper())
+
+        new_rows = []
+        for rule in seed_rules:
+            if rule.ticker.strip().upper() not in existing_tickers:
+                new_rows.append(self._rule_to_row(rule))
+
+        if new_rows:
+            start_row = len(all_values) + 1
+            end_row = start_row + len(new_rows) - 1
+            ws.update(range_name=f"A{start_row}:J{end_row}", values=new_rows)
+
+        return {
+            "seeded_count": len(new_rows),
+            "existing_count": len(existing_tickers),
+            "total_count": len(existing_tickers) + len(new_rows),
+        }
+
+    def upsert_asset_rule(self, rule: AssetRule) -> AssetRule:
+        """Insert or update an AssetRule in the 'Mapeamento_Ativos' tab."""
+        ws = self._get_mapping_worksheet()
+        all_values = ws.get_all_values()
+
+        if not all_values:
+            cols = self.template_config.get("mapping_template", {}).get("columns", [])
+            headers = [c.get("header", "") for c in cols]
+            ws.update(range_name="A1:J1", values=[headers])
+            all_values = [headers]
+
+        target_ticker = rule.ticker.strip().upper()
+        row_data = self._rule_to_row(rule)
+
+        existing_row_idx = None
+        for idx, row in enumerate(all_values[1:], start=2):
+            if row and row[0].strip().upper() == target_ticker:
+                existing_row_idx = idx
+                break
+
+        if existing_row_idx:
+            ws.update(range_name=f"A{existing_row_idx}:J{existing_row_idx}", values=[row_data])
+        else:
+            ws.append_row(row_data)
+
+        return rule
+
+    def add_asset_alias(self, ticker: str, new_alias: str) -> AssetRule:
+        """Append a new alias to an existing ticker in 'Mapeamento_Ativos'."""
+        ws = self._get_mapping_worksheet()
+        all_values = ws.get_all_values()
+        target_ticker = ticker.strip().upper()
+        clean_alias = new_alias.strip()
+
+        for idx, row in enumerate(all_values[1:], start=2):
+            if row and row[0].strip().upper() == target_ticker:
+                rule = self._row_to_rule(row)
+                if rule is None:
+                    break
+                existing_upper = {a.upper() for a in rule.aliases}
+                if clean_alias and clean_alias.upper() not in existing_upper:
+                    rule.aliases.append(clean_alias)
+                row_data = self._rule_to_row(rule)
+                ws.update(range_name=f"A{idx}:J{idx}", values=[row_data])
+                return rule
+
+        raise ValueError(f"Ticker '{target_ticker}' não encontrado na aba Mapeamento_Ativos.")

@@ -1,13 +1,385 @@
 {
-  "FIXA11": {
-    "type": "ETF",
-    "fractional": true,
-    "min_order_value": 0.0
+  "BRBI11": {
+    "name": "BR Advisory Partners Participações UNIT",
+    "category": "Ações",
+    "asset_type": "STOCK",
+    "is_fractional": false,
+    "min_order_value": 0.0,
+    "lot_step": 1.0,
+    "price_source": "brapi",
+    "aliases": ["BRBI11", "BR PARTNERS"],
+    "active": true
   },
-  "TESOURO SELIC": {
-    "type": "TESOURO",
-    "fractional": true,
-    "min_order_value": 30.0
+  "GMAT3": {
+    "name": "Grupo Mateus ON",
+    "category": "Ações",
+    "asset_type": "STOCK",
+    "is_fractional": false,
+    "min_order_value": 0.0,
+    "lot_step": 1.0,
+    "price_source": "brapi",
+    "aliases": ["GMAT3", "GRUPO MATEUS"],
+    "active": true
+  },
+  "KEPL3": {
+    "name": "Kepler Weber ON",
+    "category": "Ações",
+    "asset_type": "STOCK",
+    "is_fractional": false,
+    "min_order_value": 0.0,
+    "lot_step": 1.0,
+    "price_source": "brapi",
+    "aliases": ["KEPL3", "KEPLER WEBER"],
+    "active": true
+  },
+  "PRIO3": {
+    "name": "PRIO ON",
+    "category": "Ações",
+    "asset_type": "STOCK",
+    "is_fractional": false,
+    "min_order_value": 0.0,
+    "lot_step": 1.0,
+    "price_source": "brapi",
+    "aliases": ["PRIO3", "PETRORIO"],
+    "active": true
+  },
+  "SLCE3": {
+    "name": "SLC Agrícola ON",
+    "category": "Ações",
+    "asset_type": "STOCK",
+    "is_fractional": false,
+    "min_order_value": 0.0,
+    "lot_step": 1.0,
+    "price_source": "brapi",
+    "aliases": ["SLCE3", "SLC AGRICOLA"],
+    "active": true
+  },
+  "VALE3": {
+    "name": "Vale S.A. ON",
+    "category": "Ações",
+    "asset_type": "STOCK",
+    "is_fractional": false,
+    "min_order_value": 0.0,
+    "lot_step": 1.0,
+    "price_source": "brapi",
+    "aliases": ["VALE3", "VALE"],
+    "active": true
+  },
+  "VAMO3": {
+    "name": "Grupo Vamos ON",
+    "category": "Ações",
+    "asset_type": "STOCK",
+    "is_fractional": false,
+    "min_order_value": 0.0,
+    "lot_step": 1.0,
+    "price_source": "brapi",
+    "aliases": ["VAMO3", "VAMOS"],
+    "active": true
+  },
+  "WIZC3": {
+    "name": "Wiz Co ON",
+    "category": "Ações",
+    "asset_type": "STOCK",
+    "is_fractional": false,
+    "min_order_value": 0.0,
+    "lot_step": 1.0,
+    "price_source": "brapi",
+    "aliases": ["WIZC3", "WIZ SOLUCOES"],
+    "active": true
+  },
+  "CPTI11": {
+    "name": "Capitânia Infra FIC FI-Infra",
+    "category": "FIIs",
+    "asset_type": "FII",
+    "is_fractional": false,
+    "min_order_value": 0.0,
+    "lot_step": 1.0,
+    "price_source": "brapi",
+    "aliases": ["CPTI11"],
+    "active": true
+  },
+  "CPTS11": {
+    "name": "Capitânia Securities II FII",
+    "category": "FIIs",
+    "asset_type": "FII",
+    "is_fractional": false,
+    "min_order_value": 0.0,
+    "lot_step": 1.0,
+    "price_source": "brapi",
+    "aliases": ["CPTS11"],
+    "active": true
+  },
+  "JURO11": {
+    "name": "Sparta Infra FIC FI-Infra",
+    "category": "FIIs",
+    "asset_type": "FII",
+    "is_fractional": false,
+    "min_order_value": 0.0,
+    "lot_step": 1.0,
+    "price_source": "brapi",
+    "aliases": ["JURO11"],
+    "active": true
+  },
+  "KDIF11": {
+    "name": "Kinea Debêntures Incentivadas FI-Infra",
+    "category": "FIIs",
+    "asset_type": "FII",
+    "is_fractional": false,
+    "min_order_value": 0.0,
+    "lot_step": 1.0,
+    "price_source": "brapi",
+    "aliases": ["KDIF11"],
+    "active": true
+  },
+  "PSEC11": {
+    "name": "Pátria Securities FII",
+    "category": "FIIs",
+    "asset_type": "FII",
+    "is_fractional": false,
+    "min_order_value": 0.0,
+    "lot_step": 1.0,
+    "price_source": "brapi",
+    "aliases": ["PSEC11", "PATRIA SECURITIES"],
+    "active": true
+  },
+  "PVBI11": {
+    "name": "VBI Prime Properties FII",
+    "category": "FIIs",
+    "asset_type": "FII",
+    "is_fractional": false,
+    "min_order_value": 0.0,
+    "lot_step": 1.0,
+    "price_source": "brapi",
+    "aliases": ["PVBI11"],
+    "active": true
+  },
+  "VILG11": {
+    "name": "Vinci Logística FII",
+    "category": "FIIs",
+    "asset_type": "FII",
+    "is_fractional": false,
+    "min_order_value": 0.0,
+    "lot_step": 1.0,
+    "price_source": "brapi",
+    "aliases": ["VILG11"],
+    "active": true
+  },
+  "XPCI11": {
+    "name": "XP Crédito Imobiliário FII",
+    "category": "FIIs",
+    "asset_type": "FII",
+    "is_fractional": false,
+    "min_order_value": 0.0,
+    "lot_step": 1.0,
+    "price_source": "brapi",
+    "aliases": ["XPCI11"],
+    "active": true
+  },
+  "XPML11": {
+    "name": "XP Malls FII",
+    "category": "FIIs",
+    "asset_type": "FII",
+    "is_fractional": false,
+    "min_order_value": 0.0,
+    "lot_step": 1.0,
+    "price_source": "brapi",
+    "aliases": ["XPML11"],
+    "active": true
+  },
+  "CDB DAYCOVAL": {
+    "name": "CDB Banco Daycoval Pós-fixado",
+    "category": "Renda Fixa",
+    "asset_type": "CDB",
+    "is_fractional": false,
+    "min_order_value": 1000.0,
+    "lot_step": 1000.0,
+    "price_source": "manual",
+    "aliases": [
+      "CDB DO DAYCOVAL",
+      "CDB DO DAYCOVAL, CDB DO BMG OU TESOURO RESERVA",
+      "BANCO DAYCOVAL S.A.",
+      "CDB BANCO DAYCOVAL"
+    ],
+    "active": true
+  },
+  "IRFM11": {
+    "name": "ETF Itaú Tesouro IRF-M",
+    "category": "Renda Fixa",
+    "asset_type": "ETF",
+    "is_fractional": false,
+    "min_order_value": 0.0,
+    "lot_step": 1.0,
+    "price_source": "brapi",
+    "aliases": [
+      "IRFM11",
+      "ETF IRFM11 OU ETF IDKA11",
+      "ETF IRFM11",
+      "IDKA11"
+    ],
+    "active": true
+  },
+  "TESOURO IPCA+ 2050": {
+    "name": "Tesouro IPCA+ com Juros Semestrais 2050",
+    "category": "Renda Fixa",
+    "asset_type": "TREASURY",
+    "is_fractional": true,
+    "min_order_value": 30.0,
+    "lot_step": 0.01,
+    "price_source": "tesouro_direto",
+    "aliases": [
+      "TESOURO IPCA 2050",
+      "TESOURO IPCA+ 2050",
+      "TESOURO IPCA+ COM JUROS SEMESTRAIS 2050",
+      "NTN-B 2050"
+    ],
+    "active": true
+  },
+  "ABSOLUTE VERTEX": {
+    "name": "Absolute Vertex FIC FIM",
+    "category": "Alternativos",
+    "asset_type": "FUND",
+    "is_fractional": true,
+    "min_order_value": 500.0,
+    "lot_step": 1.0,
+    "price_source": "cvm",
+    "aliases": ["ABSOLUTE VERTEX", "ABSOLUTE VERTEX FIC FIM"],
+    "active": true
+  },
+  "ACE CAPITAL": {
+    "name": "Ace Capital FIC FIM",
+    "category": "Alternativos",
+    "asset_type": "FUND",
+    "is_fractional": true,
+    "min_order_value": 500.0,
+    "lot_step": 1.0,
+    "price_source": "cvm",
+    "aliases": ["ACE CAPITAL", "ACE CAPITAL FIC FIM"],
+    "active": true
+  },
+  "ALUG11": {
+    "name": "ETF Trend Imobiliário EUA",
+    "category": "Alternativos",
+    "asset_type": "ETF",
+    "is_fractional": false,
+    "min_order_value": 0.0,
+    "lot_step": 1.0,
+    "price_source": "brapi",
+    "aliases": ["ALUG11"],
+    "active": true
+  },
+  "BITCOIN": {
+    "name": "Bitcoin (BTC / Moeda Digital)",
+    "category": "Alternativos",
+    "asset_type": "CRYPTO",
+    "is_fractional": true,
+    "min_order_value": 10.0,
+    "lot_step": 0.0001,
+    "price_source": "coingecko",
+    "aliases": ["BITCOIN", "BTC", "BTCBRL"],
+    "active": true
+  },
+  "BNDX11": {
+    "name": "ETF Investo Vanguard Total Bond",
+    "category": "Alternativos",
+    "asset_type": "ETF",
+    "is_fractional": false,
+    "min_order_value": 0.0,
+    "lot_step": 1.0,
+    "price_source": "brapi",
+    "aliases": ["BNDX11"],
+    "active": true
+  },
+  "GENOA CAPITAL": {
+    "name": "Genoa Capital Radar FIC FIM",
+    "category": "Alternativos",
+    "asset_type": "FUND",
+    "is_fractional": true,
+    "min_order_value": 500.0,
+    "lot_step": 1.0,
+    "price_source": "cvm",
+    "aliases": ["GENOA CAPITAL", "GENOA CAPITAL RADAR", "GENOA RADAR"],
+    "active": true
+  },
+  "GOLD11": {
+    "name": "ETF Trend Ouro",
+    "category": "Alternativos",
+    "asset_type": "ETF",
+    "is_fractional": false,
+    "min_order_value": 0.0,
+    "lot_step": 1.0,
+    "price_source": "brapi",
+    "aliases": ["GOLD11"],
+    "active": true
+  },
+  "HTEK11": {
+    "name": "ETF Investo Healthcare Innovation",
+    "category": "Alternativos",
+    "asset_type": "ETF",
+    "is_fractional": false,
+    "min_order_value": 0.0,
+    "lot_step": 1.0,
+    "price_source": "brapi",
+    "aliases": ["HTEK11"],
+    "active": true
+  },
+  "KINEA ATLAS": {
+    "name": "Kinea Atlas II FIC FIM",
+    "category": "Alternativos",
+    "asset_type": "FUND",
+    "is_fractional": true,
+    "min_order_value": 500.0,
+    "lot_step": 1.0,
+    "price_source": "cvm",
+    "aliases": ["KINEA ATLAS", "KINEA ATLAS II"],
+    "active": true
+  },
+  "MS GLOBAL OPP": {
+    "name": "Morgan Stanley Global Opportunities Dólar",
+    "category": "Alternativos",
+    "asset_type": "FUND",
+    "is_fractional": true,
+    "min_order_value": 500.0,
+    "lot_step": 1.0,
+    "price_source": "cvm",
+    "aliases": [
+      "MS GLOBAL OPP",
+      "MS GLOBAL OPPORTUNITIES DÓLAR",
+      "MS GLOBAL OPPORTUNITIES DOLAR",
+      "MORGAN STANLEY GLOBAL OPPORTUNITIES"
+    ],
+    "active": true
+  },
+  "NUCL11": {
+    "name": "ETF Investo Energia Nuclear",
+    "category": "Alternativos",
+    "asset_type": "ETF",
+    "is_fractional": false,
+    "min_order_value": 0.0,
+    "lot_step": 1.0,
+    "price_source": "brapi",
+    "aliases": ["NUCL11"],
+    "active": true
+  },
+  "USDB11": {
+    "name": "ETF Investo Dólar BRL",
+    "category": "Alternativos",
+    "asset_type": "ETF",
+    "is_fractional": false,
+    "min_order_value": 0.0,
+    "lot_step": 1.0,
+    "price_source": "brapi",
+    "aliases": ["USDB11"],
+    "active": true
+  },
+  "WRLD11": {
+    "name": "ETF Investo Vanguard Total World",
+    "category": "Alternativos",
+    "asset_type": "ETF",
+    "is_fractional": false,
+    "min_order_value": 0.0,
+    "lot_step": 1.0,
+    "price_source": "brapi",
+    "aliases": ["WRLD11"],
+    "active": true
   }
 }
-

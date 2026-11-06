@@ -113,3 +113,44 @@ class LoginResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
 
+
+class AssetRule(BaseModel):
+    ticker: str
+    name: str
+    category: str = "Outros"
+    asset_type: str = "STOCK"
+    is_fractional: bool = False
+    min_order_value: float = 0.0
+    lot_step: float = 1.0
+    price_source: str = "brapi"
+    aliases: List[str] = Field(default_factory=list)
+    active: bool = True
+
+
+class AssetMappingListResponse(BaseModel):
+    source: str
+    count: int
+    items: List[AssetRule]
+
+
+class ResolveRequest(BaseModel):
+    names: List[str]
+
+
+class ResolveResult(BaseModel):
+    raw_name: str
+    ticker: Optional[str] = None
+    mapped: bool = False
+    rule: Optional[AssetRule] = None
+
+
+class ResolveBatchResponse(BaseModel):
+    mapped: List[ResolveResult]
+    unmapped: List[str]
+    can_simulate: bool
+
+
+class AliasAddRequest(BaseModel):
+    ticker: str
+    alias: str
+
