@@ -34,13 +34,24 @@ Este documento orienta o desenvolvimento passo a passo do **`investment-rebalanc
   - [x] Endpoint de verificação de saúde da conexão com a planilha.
 * **Entregável:** Módulo `sheets_db.py` autenticado e conectado à planilha.
 
-### Tarefa 2.2: Leitura da Última Aba Mensal e Gravação de Nova Aba
-* **Descrição:** Desenvolver as funções para ler o patrimônio e saldos atuais da aba mais recente, duplicar o template mensal e gravar a nova aba do mês aprovado, além de atualizar a visão geral de evolução patrimonial.
+### Tarefa 2.2: Template do Google Sheets, Leitura da Última Custódia e Gravação de Nova Aba
+* **Descrição:** Definir e manter no projeto o template nativo do Google Sheets (`config/sheets_template.json`), desenvolver as funções para identificar e ler a custódia da aba mensal mais recente no padrão `Mes_AA` (ex.: `Mai_26`), duplicar o template mensal `_TEMPLATE` gravando a nova aba aprovada e consolidar a linha histórica na aba master de `Evolução Patrimonial`.
+* **Definição do Template (`config/sheets_template.json`):**
+  - **Aba Mensal (`_TEMPLATE` e `Mes_AA`):** Formato tabular contínuo com 13 colunas:
+    `Categoria` (A), `Ticker` (B), `Nome do Ativo` (C), `Qtd Anterior` (D), `Preço Unitário (R$)` (E), `Valor Anterior (R$)` (F), `Meta (%)` (G), `Qtd Aporte` (H), `Valor Aporte (R$)` (I), `Qtd Nova` (J), `Valor Novo (R$)` (K), `% Real Novo` (L), `Status / Obs` (M).
+  - **Aba Master (`Evolução Patrimonial`):** Registro de consolidação histórica mensal com 11 colunas:
+    `Mês/Ano` (A), `Data Execução` (B), `Patrimônio Anterior (R$)` (C), `Novo Aporte (R$)` (D), `Patrimônio Final (R$)` (E), `Variação de Mercado (R$)` (F), `Rentabilidade Mensal (%)` (G), `Saldo Ações (R$)` (H), `Saldo FIIs (R$)` (I), `Saldo Renda Fixa (R$)` (J), `Saldo Alternativos (R$)` (K).
+  - **Padrão de Nomenclatura:** Regex `^(Jan|Fev|Mar|Abr|Mai|Jun|Jul|Ago|Set|Out|Nov|Dez)_(\d{2})$` para ordenação cronológica e seleção automática da custódia mais recente.
 * **Critérios de Aceite:**
-  - Leitura das colunas e linhas da aba do mês anterior (ex.: `Abr_26`).
-  - Função de duplicação/criação de nova aba padronizada (ex.: `Maio_26`).
-  - Atualização da linha master na aba de `Evolução Patrimonial`.
-* **Entregável:** Leitura e persistência de abas mensais em operação via API do Sheets.
+  - [x] Arquivo de template e schema `config/sheets_template.json` versionado no projeto.
+  - [ ] Implementação de `ensure_template_sheet()` para inicializar `_TEMPLATE` e `Evolução Patrimonial` no Google Sheets se inexistentes.
+  - [ ] Implementação de `get_latest_monthly_sheet()` ordenando abas cronologicamente e retornando lista tipada de `CustodyAsset`.
+  - [ ] Implementação de `create_monthly_sheet()` duplicando `_TEMPLATE`, preenchendo os 13 campos formatados e linha de totais.
+  - [ ] Implementação de `append_evolution_record()` inserindo ou atualizando a linha do mês na aba `Evolução Patrimonial`.
+  - [ ] Endpoint `GET /api/v1/sheets/latest-custody` retornando a custódia do último mês registrado.
+  - [ ] Endpoint `POST /api/v1/sheets/template/init` para bootstrapping da planilha.
+  - [ ] Testes unitários com mocks cobrindo ordenação de abas, leitura, escrita e tratamento de erros.
+* **Entregável:** Template padronizado versionado no projeto, módulo `sheets_db.py` com leitura/escrita funcional e testes passando.
 
 ### Tarefa 2.3: Configuração de Mapeamento de Ativos (`asset_mapping.json` / `alias_map.json`)
 * **Descrição:** Criar arquivos JSON de configuração para vincular nomes/tickers da recomendação aos ativos mantidos em custódia (ex.: relacionar opções "OU" e fundos espelho às escolhas reais), além de registrar regras de aplicação e lote mínimo (como CDB Daycoval R$ 1.000 e Genoa R$ 500).

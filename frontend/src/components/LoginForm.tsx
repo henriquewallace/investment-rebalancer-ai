@@ -82,6 +82,19 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
         >
           {loading ? "Autenticando..." : "Entrar e Sincronizar"}
         </button>
+
+        <div className="pt-2 text-center">
+          <button
+            type="button"
+            onClick={() => {
+              sessionStorage.setItem("auth_token", "dev_token_bypass");
+              onSuccess("dev_token_bypass");
+            }}
+            className="text-xs text-slate-500 hover:text-slate-800 underline"
+          >
+            Acessar sem Login (Modo Teste / Google Sheets)
+          </button>
+        </div>
       </form>
     </div>
   );

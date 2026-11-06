@@ -1,0 +1,221 @@
+{
+  "spreadsheet_title": "Investment Rebalancer AI - Custódia & Histórico",
+  "naming_convention": {
+    "pattern": "^(Jan|Fev|Mar|Abr|Mai|Jun|Jul|Ago|Set|Out|Nov|Dez)_(\\d{2})$",
+    "format": "{month}_{year_2digits}",
+    "months": [
+      "Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
+      "Jul", "Ago", "Set", "Out", "Nov", "Dez"
+    ]
+  },
+  "monthly_template": {
+    "tab_name": "_TEMPLATE",
+    "freeze_rows": 1,
+    "header_color": {
+      "red": 0.12,
+      "green": 0.16,
+      "blue": 0.22
+    },
+    "columns": [
+      {
+        "letter": "A",
+        "key": "category",
+        "header": "Categoria",
+        "type": "string",
+        "width": 130
+      },
+      {
+        "letter": "B",
+        "key": "ticker",
+        "header": "Ticker",
+        "type": "string",
+        "width": 100
+      },
+      {
+        "letter": "C",
+        "key": "asset_name",
+        "header": "Nome do Ativo",
+        "type": "string",
+        "width": 220
+      },
+      {
+        "letter": "D",
+        "key": "current_qty",
+        "header": "Qtd Anterior",
+        "type": "number",
+        "format": "#,##0.0000",
+        "width": 110
+      },
+      {
+        "letter": "E",
+        "key": "unit_price",
+        "header": "Preço Unitário (R$)",
+        "type": "currency",
+        "format": "R$ #,##0.00",
+        "width": 140
+      },
+      {
+        "letter": "F",
+        "key": "current_value",
+        "header": "Valor Anterior (R$)",
+        "type": "currency",
+        "format": "R$ #,##0.00",
+        "width": 140
+      },
+      {
+        "letter": "G",
+        "key": "target_weight",
+        "header": "Meta (%)",
+        "type": "percentage",
+        "format": "0.00%",
+        "width": 90
+      },
+      {
+        "letter": "H",
+        "key": "target_qty_change",
+        "header": "Qtd Aporte",
+        "type": "number",
+        "format": "#,##0.0000",
+        "width": 110
+      },
+      {
+        "letter": "I",
+        "key": "allocated_value",
+        "header": "Valor Aporte (R$)",
+        "type": "currency",
+        "format": "R$ #,##0.00",
+        "width": 140
+      },
+      {
+        "letter": "J",
+        "key": "new_qty",
+        "header": "Qtd Nova",
+        "type": "number",
+        "format": "#,##0.0000",
+        "width": 110
+      },
+      {
+        "letter": "K",
+        "key": "new_value",
+        "header": "Valor Novo (R$)",
+        "type": "currency",
+        "format": "R$ #,##0.00",
+        "width": 140
+      },
+      {
+        "letter": "L",
+        "key": "new_weight",
+        "header": "% Real Novo",
+        "type": "percentage",
+        "format": "0.00%",
+        "width": 100
+      },
+      {
+        "letter": "M",
+        "key": "status",
+        "header": "Status / Obs",
+        "type": "string",
+        "width": 140
+      }
+    ]
+  },
+  "evolution_template": {
+    "tab_name": "Evolução Patrimonial",
+    "freeze_rows": 1,
+    "header_color": {
+      "red": 0.06,
+      "green": 0.09,
+      "blue": 0.16
+    },
+    "columns": [
+      {
+        "letter": "A",
+        "key": "month_year",
+        "header": "Mês/Ano",
+        "type": "string",
+        "width": 90
+      },
+      {
+        "letter": "B",
+        "key": "execution_date",
+        "header": "Data Execução",
+        "type": "string",
+        "format": "YYYY-MM-DD",
+        "width": 120
+      },
+      {
+        "letter": "C",
+        "key": "previous_total",
+        "header": "Patrimônio Anterior (R$)",
+        "type": "currency",
+        "format": "R$ #,##0.00",
+        "width": 170
+      },
+      {
+        "letter": "D",
+        "key": "new_investment",
+        "header": "Novo Aporte (R$)",
+        "type": "currency",
+        "format": "R$ #,##0.00",
+        "width": 140
+      },
+      {
+        "letter": "E",
+        "key": "new_total",
+        "header": "Patrimônio Final (R$)",
+        "type": "currency",
+        "format": "R$ #,##0.00",
+        "width": 160
+      },
+      {
+        "letter": "F",
+        "key": "market_delta",
+        "header": "Variação de Mercado (R$)",
+        "type": "currency",
+        "format": "R$ #,##0.00",
+        "width": 170
+      },
+      {
+        "letter": "G",
+        "key": "monthly_return_pct",
+        "header": "Rentabilidade Mensal (%)",
+        "type": "percentage",
+        "format": "0.00%",
+        "width": 160
+      },
+      {
+        "letter": "H",
+        "key": "equity_total",
+        "header": "Saldo Ações (R$)",
+        "type": "currency",
+        "format": "R$ #,##0.00",
+        "width": 140
+      },
+      {
+        "letter": "I",
+        "key": "real_estate_total",
+        "header": "Saldo FIIs (R$)",
+        "type": "currency",
+        "format": "R$ #,##0.00",
+        "width": 140
+      },
+      {
+        "letter": "J",
+        "key": "fixed_income_total",
+        "header": "Saldo Renda Fixa (R$)",
+        "type": "currency",
+        "format": "R$ #,##0.00",
+        "width": 160
+      },
+      {
+        "letter": "K",
+        "key": "alternatives_total",
+        "header": "Saldo Alternativos (R$)",
+        "type": "currency",
+        "format": "R$ #,##0.00",
+        "width": 160
+      }
+    ]
+  }
+}
+
